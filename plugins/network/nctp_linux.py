@@ -35,31 +35,37 @@ class LinuxIfconfig(Plugin):
         return ui
         
     def get_tx(self, iface):
-        s = shell('ifconfig %s | grep \'TX bytes\''%iface.name)
-        print s
         try:
-            s = s.split()[5].split(':')[1]
-        except:
-            s = '0'
-        return int(s)
+            return int(shell('ifconfig %s | grep \'TX bytes\''%iface.name).split()[5].split(':')[1])
+        except: pass
+        
+        try:
+            return int(shell('ifconfig %s | grep -E \'TX .+ bytes\''%iface.name).split()[4])
+        except: pass
+        
+        return 0
     
     def get_rx(self, iface):
-        s = shell('ifconfig %s | grep \'RX bytes\''%iface.name)
-        print s
         try:
-            s = s.split()[1].split(':')[1]
-        except:
-            s = '0'
-        return int(s)
+            return int(shell('ifconfig %s | grep \'RX bytes\''%iface.name).split()[1].split(':')[1])
+        except: pass
+        
+        try:
+            return int(shell('ifconfig %s | grep -E \'RX .+ bytes\''%iface.name).split()[4])
+        except: pass
+        
+        return 0
         
     def get_ip(self, iface):
-        s = shell('ifconfig %s | grep \'inet addr\''%iface.name)
         try:
-            s = s.split()[1].split(':')[1]
-        except:
-            s = '0.0.0.0'
-        return s    
+            return shell('ifconfig %s | grep \'inet addr\''%iface.name).split()[1].split(':')[1]
+        except: pass
+
+        try:
+            return shell('ifconfig %s | grep \'inet\''%iface.name).split()[1]
+        except: pass
         
+        return '0.0.0.0'
 
     def detect_dev_class(self, iface):
         if iface.name[:-1] in ['ppp', 'wvdial']:
@@ -79,7 +85,6 @@ class LinuxIfconfig(Plugin):
     def detect_iface_bits(self, iface):
         r = ['linux-basic']
         cls = self.detect_dev_class(iface)
-        print iface.type, iface.addressing
         if iface.type == 'inet' and iface.addressing == 'static':
             r.append('linux-ipv4')
         if iface.type == 'inet6' and iface.addressing == 'static':
